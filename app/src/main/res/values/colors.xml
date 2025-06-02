@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="active_tab">#007AFF</color>
+    <color name="inactive_tab">#999999</color>
+    <color name="primary_color">#007AFF</color>
+    <color name="accent_color">#FF6B35</color>
+    <color name="background_color">#F8F9FA</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray_light">#E0E0E0</color>
+    <color name="gray">#666666</color>
+    <color name="gray_dark">#999999</color>
+</resources>

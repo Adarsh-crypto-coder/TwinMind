@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "406956533989",
+    "project_id": "twin-mind",
+    "storage_bucket": "twin-mind.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406956533989:android:8284c3cb0aefb97c5a4c0c",
+        "android_client_info": {
+          "package_name": "com.example.twinmind"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "406956533989-j312s6hpfe26ukbg2i0tr6flm8l09p8d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.twinmind",
+            "certificate_hash": "1bfa781daa359ab3406b149c0107500a4819ec8a"
+          }
+        },
+        {
+          "client_id": "406956533989-cq11l6e8hj38ejfcs9r4bqabrsf5aog1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEGnw6BM-HrGocGrlm51YQRU12WlolEPo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "406956533989-cq11l6e8hj38ejfcs9r4bqabrsf5aog1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
