@@ -1,10 +1,12 @@
 package com.example.twinmind;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +29,7 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
     private ProgressBar progressBar;
     private View contentContainer;
     private View loadingContainer;
+    private Button btnChatTranscript; // Added chat button
 
     private TranscriptionDatabaseHelper dbHelper;
     private OpenAIManager openAIManager;
@@ -64,6 +67,7 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
         super.onViewCreated(view, savedInstanceState);
 
         initViews(view);
+        setupChatButton();
         generateNotes();
     }
 
@@ -74,31 +78,56 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
         progressBar = view.findViewById(R.id.progress_bar);
         contentContainer = view.findViewById(R.id.content_container);
         loadingContainer = view.findViewById(R.id.loading_container);
+        btnChatTranscript = view.findViewById(R.id.btn_chat_transcript);
+    }
+
+    private void setupChatButton() {
+        if (btnChatTranscript != null) {
+            btnChatTranscript.setOnClickListener(v -> {
+                Log.d(TAG, "Chat with transcript button clicked for session: " + sessionId);
+                openChatWithTranscript();
+            });
+            Log.d(TAG, "Chat button setup successfully");
+        } else {
+            Log.w(TAG, "Chat button not found in layout");
+        }
+    }
+
+    private void openChatWithTranscript() {
+        if (sessionId == null || sessionId.isEmpty()) {
+            Toast.makeText(getContext(), "Session not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<TranscriptionEntry> transcriptions = dbHelper.getTranscriptionsForSession(sessionId);
+        if (transcriptions == null || transcriptions.isEmpty()) {
+            Toast.makeText(getContext(), "No transcript available for this session", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(getActivity(), ChatWithTranscriptActivity.class);
+        intent.putExtra("SESSION_ID", sessionId);
+        startActivity(intent);
+
+        Log.d(TAG, "Opening chat for session: " + sessionId);
     }
 
     private void generateNotes() {
         Log.d(TAG, "=== STARTING NOTES GENERATION ===");
         Log.d(TAG, "Session ID: " + sessionId);
 
-        // Show loading state
         showLoading(true);
-
-        // Get all transcriptions for this session
         List<TranscriptionEntry> transcriptions = dbHelper.getTranscriptionsForSession(sessionId);
 
         Log.d(TAG, "Found transcriptions: " + (transcriptions != null ? transcriptions.size() : 0));
 
         if (transcriptions == null || transcriptions.isEmpty()) {
             Log.w(TAG, "No transcriptions found - will retry in 3 seconds");
-
-            // Wait 3 seconds and try again (transcription might still be processing)
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 retryGenerateNotes();
             }, 3000);
             return;
         }
-
-        // Continue with existing logic
         processTranscriptions(transcriptions);
     }
 
@@ -118,7 +147,6 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
     }
 
     private void processTranscriptions(List<TranscriptionEntry> transcriptions) {
-        // Combine all transcriptions into one text
         StringBuilder fullTranscript = new StringBuilder();
         for (TranscriptionEntry entry : transcriptions) {
             fullTranscript.append(entry.transcriptionText).append(" ");
@@ -136,7 +164,6 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
         Log.d(TAG, "Full transcript: " + transcriptText);
         Log.d(TAG, "Transcript length: " + transcriptText.length());
 
-        // Generate notes using OpenAI
         generateSummaryAndNotes(transcriptText);
     }
 
@@ -187,7 +214,6 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
         Log.d(TAG, "Parsing AI response: " + response.substring(0, Math.min(100, response.length())) + "...");
 
         try {
-            // Parse the AI response into sections
             String[] sections = response.split("##");
 
             StringBuilder summaryText = new StringBuilder();
@@ -207,7 +233,6 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
                 }
             }
 
-            // Display the parsed content
             if (summaryText.length() > 0) {
                 tvSummary.setText(summaryText.toString());
             } else {
@@ -262,7 +287,6 @@ public class NotesFragment extends Fragment implements OpenAIManager.OpenAICallb
         }
     }
 
-    // OpenAICallback implementation (if needed for direct calls)
     @Override
     public void onSuccess(String response) {
         // This method can be used for additional OpenAI calls if needed

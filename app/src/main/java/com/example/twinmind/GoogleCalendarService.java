@@ -44,15 +44,13 @@ public class GoogleCalendarService {
     }
 
     public void loadUpcomingEvents(int daysAhead, CalendarCallback callback) {
-        // Check authentication first
+
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(context);
 
         if (account == null) {
             callback.onPermissionRequired("Please sign in to view calendar events");
             return;
         }
-
-        // Check if user has granted calendar permission
         if (!account.getGrantedScopes().contains(new Scope(CalendarScopes.CALENDAR_READONLY))) {
             callback.onPermissionRequired("Calendar access not granted. Please grant calendar permissions in app settings.");
             return;
@@ -63,8 +61,6 @@ public class GoogleCalendarService {
             callback.onError("Failed to setup calendar service");
             return;
         }
-
-        // Load events in background
         executorService.execute(() -> {
             try {
                 List<CalendarEvent> events = fetchEventsFromAPI(daysAhead);
@@ -102,14 +98,13 @@ public class GoogleCalendarService {
     }
 
     private List<CalendarEvent> fetchEventsFromAPI(int daysAhead) throws Exception {
-        // Calculate time range
+
         long now = System.currentTimeMillis();
         long futureTime = now + (daysAhead * 24L * 60 * 60 * 1000);
 
         com.google.api.client.util.DateTime timeMin = new com.google.api.client.util.DateTime(now);
         com.google.api.client.util.DateTime timeMax = new com.google.api.client.util.DateTime(futureTime);
 
-        // Fetch events from Google Calendar API
         Events events = calendarService.events().list("primary")
                 .setTimeMin(timeMin)
                 .setTimeMax(timeMax)

@@ -16,10 +16,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,12 +60,10 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
     private ExecutorService recordingExecutor;
     private ScheduledExecutorService transcriptionScheduler;
 
-    // Transcription Management
-    private TranscriptionManager transcriptionManager; // Google Speech manager
+    private TranscriptionManager transcriptionManager;
     private AudioBufferManager audioBufferManager;
     private TranscriptionDatabaseHelper dbHelper;
 
-    // Session Management
     private String currentSessionId;
     private int transcriptionChunkIndex = 0;
     private boolean permissionsAlreadyGranted = false;
@@ -76,7 +78,13 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_recording);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main1), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         initViews();
         initManagers();
@@ -109,10 +117,7 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
     }
 
     private void initManagers() {
-        // Create unique session ID first
         currentSessionId = "session_" + System.currentTimeMillis();
-
-        // Initialize Google Speech transcription manager
         transcriptionManager = new TranscriptionManager(this);
         transcriptionManager.setTranscriptionListener(this);
         transcriptionManager.setCurrentSessionId(currentSessionId);
@@ -132,7 +137,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
 
         btnStop.setOnClickListener(v -> {
             stopRecording();
-            // Navigate to summary screen instead of finishing
             goToSummaryScreen();
         });
 
@@ -149,7 +153,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
         boolean micPermission = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
 
-        // For Android 11+, storage permission is not needed for app-specific directories
         boolean storagePermission = true;
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
             storagePermission = ContextCompat.checkSelfPermission(this,
@@ -249,7 +252,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
         isPaused = true;
         pauseStartTime = System.currentTimeMillis();
 
-        // Stop audio recording temporarily
         if (audioRecord != null && audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
             try {
                 audioRecord.stop();
@@ -258,8 +260,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
                 Log.e(TAG, "Error pausing audio record", e);
             }
         }
-
-        // Process any remaining audio chunk before pausing
         byte[] pauseChunk = audioBufferManager.getAndClearBuffer();
         if (pauseChunk != null && pauseChunk.length > 0) {
             transcriptionManager.transcribeAudioChunk(pauseChunk);
@@ -275,14 +275,12 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
 
         Log.d(TAG, "Resuming recording...");
 
-        // Add paused time to total
         if (pauseStartTime > 0) {
             totalPausedTime += System.currentTimeMillis() - pauseStartTime;
             pauseStartTime = 0;
         }
 
         try {
-            // Resume audio recording
             if (audioRecord != null && audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
                 audioRecord.startRecording();
 
@@ -290,7 +288,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
                     isPaused = false;
                     Log.d(TAG, "AudioRecord resumed");
 
-                    // Restart audio capture if needed
                     if (recordingExecutor.isShutdown()) {
                         recordingExecutor = Executors.newSingleThreadExecutor();
                         startAudioCapture();
@@ -314,11 +311,8 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
         runOnUiThread(() -> {
             if (isPaused) {
                 tvPauseResume.setText("Resume");
-                // For now, we'll use a default play icon - you'll need to add these to your drawable folder
-                // ivPauseResume.setImageResource(android.R.drawable.ic_media_play);
             } else {
                 tvPauseResume.setText("Pause");
-                // ivPauseResume.setImageResource(android.R.drawable.ic_media_pause);
             }
         });
     }
@@ -330,7 +324,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
 
             while (isRecording && audioRecord != null) {
                 if (isPaused) {
-                    // Sleep briefly when paused
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
@@ -388,10 +381,8 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
                     long elapsedTime;
 
                     if (isPaused && pauseStartTime > 0) {
-                        // Include current pause duration
                         elapsedTime = (pauseStartTime - recordingStartTime) - totalPausedTime;
                     } else {
-                        // Normal elapsed time minus total paused time
                         elapsedTime = (currentTime - recordingStartTime) - totalPausedTime;
                     }
 
@@ -439,12 +430,10 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
         long endTime = System.currentTimeMillis();
         long totalDuration = endTime - recordingStartTime - totalPausedTime;
 
-        // Stop timer
         if (timerHandler != null && timerRunnable != null) {
             timerHandler.removeCallbacks(timerRunnable);
         }
 
-        // Stop audio recording
         if (audioRecord != null) {
             try {
                 if (audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
@@ -457,17 +446,13 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
             }
             audioRecord = null;
         }
-
-        // Process final audio chunk
         byte[] finalChunk = audioBufferManager.getAndClearBuffer();
         if (finalChunk != null && finalChunk.length > 0) {
             transcriptionManager.transcribeAudioChunk(finalChunk);
         }
 
-        // Update recording session in database
         dbHelper.endRecordingSession(currentSessionId, endTime, totalDuration);
 
-        // Stop executors
         if (recordingExecutor != null && !recordingExecutor.isShutdown()) {
             recordingExecutor.shutdown();
         }
@@ -475,10 +460,8 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
             transcriptionScheduler.shutdown();
         }
 
-        // Sync any pending transcriptions
         transcriptionManager.syncPendingTranscriptions();
 
-        // Clean up temporary files
         audioBufferManager.clearTempFiles();
 
         updateUI();
@@ -494,7 +477,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
         finish();
     }
 
-    // TranscriptionListener implementation
     @Override
     public void onTranscriptionReceived(String transcription, long timestamp) {
         runOnUiThread(() -> {
@@ -525,7 +507,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
         tvTranscriptionCount.setText(String.valueOf(transcriptionChunkIndex));
     }
 
-    // Add this method for testing purposes (optional)
     private void addTestTranscriptionData() {
         Log.d(TAG, "Adding test transcription data for testing...");
 
@@ -534,25 +515,24 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
 
         dbHelper.insertTranscription(currentSessionId,
                 "Hello everyone, welcome to today's meeting. Let's start by reviewing our progress from last week and discussing the upcoming milestones.",
-                baseTime - 240000, 0); // 4 minutes ago
+                baseTime - 240000, 0);
 
         dbHelper.insertTranscription(currentSessionId,
                 "Our main objectives for this quarter are to increase user engagement by 25% and improve our conversion rates. Sarah, can you share the latest analytics from the dashboard?",
-                baseTime - 180000, 1); // 3 minutes ago
+                baseTime - 180000, 1);
 
         dbHelper.insertTranscription(currentSessionId,
                 "Based on the data, we're seeing a 15% increase in daily active users compared to last month. However, our retention rate needs improvement, especially in the first week after signup.",
-                baseTime - 120000, 2); // 2 minutes ago
+                baseTime - 120000, 2);
 
         dbHelper.insertTranscription(currentSessionId,
                 "Let's schedule follow-up meetings with the product team to address the retention issues. John will handle the budget review by Friday, and we need to finalize the roadmap for Q2.",
-                baseTime - 60000, 3); // 1 minute ago
+                baseTime - 60000, 3);
 
         dbHelper.insertTranscription(currentSessionId,
                 "Thank you everyone for your time today. Please send me your action items by end of day tomorrow, and we'll reconvene next Tuesday to review progress.",
-                baseTime, 4); // Now
+                baseTime, 4);
 
-        // Update the transcription count
         transcriptionChunkIndex = 5;
         updateTranscriptionCount();
 
@@ -577,7 +557,6 @@ public class RecordingActivity extends AppCompatActivity implements Transcriptio
     @Override
     protected void onPause() {
         super.onPause();
-        // Keep recording in background, but ensure proper cleanup if needed
     }
 
     @Override

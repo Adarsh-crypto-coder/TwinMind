@@ -1,10 +1,18 @@
 package com.example.twinmind;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.LinearLayout;
+
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,7 +28,13 @@ public class SessionNotesActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_session_notes);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main3), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         // Get session ID from intent
         sessionId = getIntent().getStringExtra("SESSION_ID");
@@ -35,7 +49,10 @@ public class SessionNotesActivity extends AppCompatActivity {
         setupToolbar();
         loadNotesFragment();
         setActivityTitle();
+
     }
+
+
 
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -50,10 +67,7 @@ public class SessionNotesActivity extends AppCompatActivity {
     }
 
     private void loadNotesFragment() {
-        // Use your existing NotesFragment with the session ID
         NotesFragment notesFragment = NotesFragment.newInstance(sessionId);
-
-        // Replace fragment container with your NotesFragment
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, notesFragment)
@@ -61,15 +75,11 @@ public class SessionNotesActivity extends AppCompatActivity {
     }
 
     private void setActivityTitle() {
-        // Get session info and set a meaningful title
         List<TranscriptionEntry> transcriptions = dbHelper.getTranscriptionsForSession(sessionId);
 
         if (transcriptions != null && !transcriptions.isEmpty()) {
-            // Get the first transcription for title
             String firstText = transcriptions.get(0).transcriptionText;
             String title = generateTitleFromText(firstText);
-
-            // Get session date
             Date sessionDate = new Date(transcriptions.get(0).timestamp);
             SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d, yyyy 'at' h:mm a", Locale.getDefault());
             String dateStr = dateFormat.format(sessionDate);
@@ -85,14 +95,10 @@ public class SessionNotesActivity extends AppCompatActivity {
         if (text == null || text.trim().isEmpty()) {
             return "Recording Session";
         }
-
-        // Take first meaningful words (up to 50 characters)
         String title = text.trim();
         if (title.length() > 50) {
             title = title.substring(0, 47) + "...";
         }
-
-        // Capitalize first letter
         if (title.length() > 0) {
             title = title.substring(0, 1).toUpperCase() + title.substring(1);
         }
@@ -102,7 +108,6 @@ public class SessionNotesActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle back button click
         if (item.getItemId() == android.R.id.home) {
             onBackPressed();
             return true;
@@ -113,7 +118,6 @@ public class SessionNotesActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        // Return to HomeActivity
         finish();
     }
 }

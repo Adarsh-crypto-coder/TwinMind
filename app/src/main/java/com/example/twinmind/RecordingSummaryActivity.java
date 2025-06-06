@@ -8,8 +8,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
@@ -40,7 +44,13 @@ public class RecordingSummaryActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_recording_summary);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main2), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         initViews();
         initData();
@@ -64,7 +74,6 @@ public class RecordingSummaryActivity extends AppCompatActivity {
     }
 
     private void initData() {
-        // Get data from intent
         sessionId = getIntent().getStringExtra("SESSION_ID");
         recordingDuration = getIntent().getStringExtra("RECORDING_DURATION");
         transcriptionCount = getIntent().getIntExtra("TRANSCRIPTION_COUNT", 0);
@@ -79,10 +88,8 @@ public class RecordingSummaryActivity extends AppCompatActivity {
     }
 
     private void loadRecordingDetails() {
-        // Load session details from database
         RecordingSession session = dbHelper.getRecordingSession(sessionId);
         if (session != null) {
-            // Format date and time
             SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault());
             SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
 
@@ -92,7 +99,6 @@ public class RecordingSummaryActivity extends AppCompatActivity {
             tvLocation.setText(session.location != null ? session.location : "Unknown Location");
         }
 
-        // Set duration and transcription count
         if (recordingDuration != null) {
             tvDuration.setText(recordingDuration);
         }
@@ -103,11 +109,8 @@ public class RecordingSummaryActivity extends AppCompatActivity {
         SummaryTabsAdapter adapter = new SummaryTabsAdapter(this);
         viewPager.setAdapter(adapter);
 
-        // Set initial tab to Notes (middle tab)
         viewPager.setCurrentItem(1, false);
         updateTabSelection(1);
-
-        // Handle page changes when swiping
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
@@ -119,7 +122,6 @@ public class RecordingSummaryActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnBack.setOnClickListener(v -> {
-            // Go back to home activity
             Intent intent = new Intent(this, HomeActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
@@ -146,7 +148,6 @@ public class RecordingSummaryActivity extends AppCompatActivity {
     private void updateTabSelection(int position) {
         currentTab = position;
 
-        // Reset all tabs to inactive state
         tabQuestions.setTextColor(getColor(R.color.inactive_tab));
         tabQuestions.setTypeface(null, android.graphics.Typeface.NORMAL);
 
@@ -156,7 +157,6 @@ public class RecordingSummaryActivity extends AppCompatActivity {
         tabTranscript.setTextColor(getColor(R.color.inactive_tab));
         tabTranscript.setTypeface(null, android.graphics.Typeface.NORMAL);
 
-        // Set active tab
         switch (position) {
             case 0:
                 tabQuestions.setTextColor(getColor(R.color.active_tab));
@@ -175,7 +175,6 @@ public class RecordingSummaryActivity extends AppCompatActivity {
 
     private void shareRecording() {
         try {
-            // Get transcript text
             List<TranscriptionEntry> transcriptions = dbHelper.getTranscriptionsForSession(sessionId);
             StringBuilder fullTranscript = new StringBuilder();
 
@@ -201,8 +200,6 @@ public class RecordingSummaryActivity extends AppCompatActivity {
             Toast.makeText(this, "Error sharing recording", Toast.LENGTH_SHORT).show();
         }
     }
-
-    // ViewPager2 Adapter for Summary Tabs
     private class SummaryTabsAdapter extends FragmentStateAdapter {
         public SummaryTabsAdapter(@NonNull FragmentActivity fragmentActivity) {
             super(fragmentActivity);
@@ -225,17 +222,17 @@ public class RecordingSummaryActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return 3; // Questions, Notes, Transcript
+            return 3;
         }
     }
 
     @Override
     public void onBackPressed() {
-        // Go back to home activity instead of previous activity
         super.onBackPressed();
         Intent intent = new Intent(this, HomeActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         finish();
     }
+
 }

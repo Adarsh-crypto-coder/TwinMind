@@ -96,7 +96,6 @@ public class TranscriptFragment extends Fragment {
         tvNoTranscript.setVisibility(View.VISIBLE);
     }
 
-    // Adapter for Transcript RecyclerView
     private static class TranscriptAdapter extends RecyclerView.Adapter<TranscriptAdapter.TranscriptViewHolder> {
 
         private List<TranscriptionEntry> transcriptions;
@@ -137,11 +136,8 @@ public class TranscriptFragment extends Fragment {
             }
 
             public void bind(TranscriptionEntry entry, SimpleDateFormat timeFormat) {
-                // Format timestamp
                 Date timestamp = new Date(entry.timestamp);
                 tvTimestamp.setText(timeFormat.format(timestamp));
-
-                // Set transcription text
                 tvTranscription.setText(entry.transcriptionText);
             }
         }

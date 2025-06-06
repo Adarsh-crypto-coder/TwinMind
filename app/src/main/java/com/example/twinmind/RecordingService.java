@@ -29,14 +29,12 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
     private static final String CHANNEL_ID = "RecordingServiceChannel";
     private static final int NOTIFICATION_ID = 1001;
 
-    // Audio Configuration
     private static final int SAMPLE_RATE = 16000;
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     private static final int BUFFER_SIZE_FACTOR = 2;
-    private static final int TRANSCRIPTION_INTERVAL_MS = 30000; // 30 seconds
+    private static final int TRANSCRIPTION_INTERVAL_MS = 30000;
 
-    // Recording components
     private AudioRecord audioRecord;
     private boolean isRecording = false;
     private ExecutorService recordingExecutor;
@@ -47,12 +45,9 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
     private AudioBufferManager audioBufferManager;
     private TranscriptionDatabaseHelper dbHelper;
 
-    // Session data
     private String currentSessionId;
     private int transcriptionChunkIndex = 0;
     private long recordingStartTime;
-
-    // Binder for activity communication
     private final IBinder binder = new RecordingBinder();
 
     public class RecordingBinder extends Binder {
@@ -107,7 +102,7 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
             stopSelf();
         }
 
-        return START_STICKY; // Restart service if killed
+        return START_STICKY;
     }
 
     private void startRecording() {
@@ -149,7 +144,6 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
             audioRecord.startRecording();
             isRecording = true;
 
-            // Create recording session in database
             dbHelper.createRecordingSession(
                     currentSessionId,
                     "Background Recording",
@@ -157,10 +151,7 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
                     "Background Location"
             );
 
-            // Start foreground service with notification
             startForeground(NOTIFICATION_ID, createNotification());
-
-            // Start audio capture and transcription
             startAudioCapture();
             startPeriodicTranscription();
 
@@ -181,7 +172,6 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
                     int bytesRead = audioRecord.read(audioBuffer, 0, audioBuffer.length);
 
                     if (bytesRead > 0) {
-                        // Buffer audio data for transcription
                         audioBufferManager.addAudioData(audioBuffer, bytesRead);
                     } else if (bytesRead == AudioRecord.ERROR_INVALID_OPERATION) {
                         Log.e(TAG, "AudioRecord read error: INVALID_OPERATION");
@@ -214,7 +204,6 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
         long endTime = System.currentTimeMillis();
         long totalDuration = endTime - recordingStartTime;
 
-        // Stop audio recording
         if (audioRecord != null) {
             try {
                 audioRecord.stop();
@@ -224,19 +213,15 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
             }
             audioRecord = null;
         }
-
-        // Process final audio chunk
         byte[] finalChunk = audioBufferManager.getAndClearBuffer();
         if (finalChunk != null && finalChunk.length > 0) {
             transcriptionManager.transcribeAudioChunk(finalChunk);
         }
 
-        // Update recording session in database
         if (currentSessionId != null) {
             dbHelper.endRecordingSession(currentSessionId, endTime, totalDuration);
         }
 
-        // Stop executors
         if (recordingExecutor != null) {
             recordingExecutor.shutdown();
         }
@@ -244,10 +229,6 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
             transcriptionScheduler.shutdown();
         }
 
-        // Sync any pending transcriptions
-//        transcriptionManager.syncPendingTranscriptions();
-
-        // Clean up temporary files
         audioBufferManager.clearTempFiles();
 
         Log.d(TAG, "Recording stopped successfully");
@@ -292,7 +273,7 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
         Log.d(TAG, "Recording service destroyed");
     }
 
-    // TranscriptionListener implementation
+    // TranscriptionListener
     @Override
     public void onTranscriptionReceived(String transcription, long timestamp) {
         // Save transcription to database
@@ -300,19 +281,15 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
             dbHelper.insertTranscription(currentSessionId, transcription, timestamp, transcriptionChunkIndex++);
             Log.d(TAG, "Transcription saved: " + transcription.substring(0, Math.min(50, transcription.length())));
         }
-
-        // Update notification with latest transcription snippet
         updateNotificationWithTranscription(transcription);
     }
 
     @Override
     public void onTranscriptionError(String error) {
         Log.e(TAG, "Transcription error in service: " + error);
-        // Could update notification to show error state
     }
 
     private void updateNotificationWithTranscription(String transcription) {
-        // Show a snippet of the latest transcription in the notification
         String snippet = transcription.length() > 30 ?
                 transcription.substring(0, 30) + "..." : transcription;
 
@@ -329,7 +306,6 @@ public class RecordingService extends Service implements TranscriptionManager.Tr
         notificationManager.notify(NOTIFICATION_ID, updatedNotification);
     }
 
-    // Public methods for activity communication
     public boolean isRecording() {
         return isRecording;
     }

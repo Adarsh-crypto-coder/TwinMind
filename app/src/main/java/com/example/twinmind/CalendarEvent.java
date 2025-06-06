@@ -18,7 +18,6 @@ public class CalendarEvent {
         this.location = event.getLocation();
         this.description = event.getDescription();
 
-        // Handle different time formats
         if (event.getStart().getDateTime() != null) {
             this.startTime = new Date(event.getStart().getDateTime().getValue());
             this.isAllDay = false;
@@ -34,7 +33,6 @@ public class CalendarEvent {
         }
     }
 
-    // Constructor for manual creation (useful for testing)
     public CalendarEvent(String title, Date startTime, Date endTime, String location, boolean isAllDay) {
         this.title = title;
         this.startTime = startTime;

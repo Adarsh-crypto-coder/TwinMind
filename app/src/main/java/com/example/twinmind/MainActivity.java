@@ -6,7 +6,6 @@ import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -15,11 +14,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -73,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 Log.d(TAG, "firebaseAuthWithGoogle:" + account.getId());
 
-                // Store the Google account info for later use
                 firebaseAuthWithGoogle(account.getIdToken(), account);
             } catch (ApiException e) {
                 Log.w(TAG, "Google sign in failed", e);
@@ -87,19 +83,15 @@ public class MainActivity extends AppCompatActivity {
         auth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // Sign in success
                         Log.d(TAG, "signInWithCredential:success");
                         FirebaseUser user = auth.getCurrentUser();
 
-                        // Update user profile with Google account info if needed
                         updateUserProfile(user, googleAccount);
 
                         Toast.makeText(MainActivity.this, "Authentication successful!", Toast.LENGTH_SHORT).show();
 
-                        // Navigate to next activity
                         navigateToMainScreen();
                     } else {
-                        // Sign in failed
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
                         Toast.makeText(MainActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
@@ -108,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateUserProfile(FirebaseUser user, GoogleSignInAccount googleAccount) {
         if (user != null && googleAccount != null) {
-            // Create profile update request
             UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                     .setDisplayName(googleAccount.getDisplayName())
                     .setPhotoUri(googleAccount.getPhotoUrl())
@@ -134,7 +125,6 @@ public class MainActivity extends AppCompatActivity {
     private void signOut() {
         auth.signOut();
 
-        // Google sign out
         googleSignInClient.signOut().addOnCompleteListener(this,
                 task -> Toast.makeText(MainActivity.this, "Signed out successfully", Toast.LENGTH_SHORT).show());
     }

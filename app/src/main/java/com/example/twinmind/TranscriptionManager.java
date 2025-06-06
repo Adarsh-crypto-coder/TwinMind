@@ -26,13 +26,11 @@ public class TranscriptionManager {
 
     private static final String TAG = "GoogleSpeechTranscription";
 
-    // Google Cloud Speech-to-Text API
     private static final String GOOGLE_SPEECH_API_URL =
             "https://speech.googleapis.com/v1/speech:recognize?key=";
-    private static final String API_KEY = "AIzaSyATcaLbPkSCMa0S3YiIFocBZh5biRuHuko"; // Your Google API key
+    private static final String API_KEY = "AIzaSyATcaLbPkSCMa0S3YiIFocBZh5biRuHuko";
 
-    // Rate limiting
-    private static final long MIN_REQUEST_INTERVAL_MS = 1000; // 1 second between requests
+    private static final long MIN_REQUEST_INTERVAL_MS = 1000;
     private long lastRequestTime = 0;
 
     private final Context context;
@@ -73,7 +71,6 @@ public class TranscriptionManager {
 
         transcriptionExecutor.execute(() -> {
             try {
-                // Rate limiting
                 long currentTime = System.currentTimeMillis();
                 long timeSinceLastRequest = currentTime - lastRequestTime;
 
@@ -82,11 +79,7 @@ public class TranscriptionManager {
                     Thread.sleep(delayNeeded);
                 }
                 lastRequestTime = System.currentTimeMillis();
-
-                // Convert audio to required format
                 byte[] wavData = convertToWav(audioData);
-
-                // Transcribe with Google Speech API
                 transcribeWithGoogleSpeech(wavData, timestamp);
 
             } catch (Exception e) {
@@ -100,25 +93,17 @@ public class TranscriptionManager {
 
     private void transcribeWithGoogleSpeech(byte[] audioData, long timestamp) {
         try {
-            // Encode audio data to base64
             String encodedAudio = Base64.encodeToString(audioData, Base64.NO_WRAP);
-
-            // Create request JSON
             JSONObject request = new JSONObject();
             JSONObject config = new JSONObject();
             JSONObject audio = new JSONObject();
-
-            // Audio configuration
             config.put("encoding", "LINEAR16");
             config.put("sampleRateHertz", 16000);
             config.put("languageCode", "en-US");
             config.put("enableAutomaticPunctuation", true);
-            config.put("model", "latest_short"); // Optimized for short audio clips
-
-            // Audio data
+            config.put("model", "latest_short");
             audio.put("content", encodedAudio);
 
-            // Complete request
             request.put("config", config);
             request.put("audio", audio);
 
@@ -165,10 +150,8 @@ public class TranscriptionManager {
                                     if (!transcription.isEmpty()) {
                                         Log.d(TAG, "Transcription successful: " + transcription);
 
-                                        // Save to database
                                         saveTranscriptionToDatabase(transcription, timestamp);
 
-                                        // Notify listener
                                         if (listener != null) {
                                             mainHandler.post(() -> listener.onTranscriptionReceived(transcription, timestamp));
                                         }
@@ -208,7 +191,6 @@ public class TranscriptionManager {
     }
 
     private byte[] convertToWav(byte[] rawAudio) {
-        // WAV header creation for 16kHz, 16-bit, mono audio
         int totalDataLen = rawAudio.length + 36;
         int totalFileLen = totalDataLen - 8;
         int sampleRate = 16000;
@@ -217,29 +199,24 @@ public class TranscriptionManager {
 
         byte[] header = new byte[44];
 
-        // RIFF header
         header[0] = 'R'; header[1] = 'I'; header[2] = 'F'; header[3] = 'F';
         header[4] = (byte) (totalFileLen & 0xff);
         header[5] = (byte) ((totalFileLen >> 8) & 0xff);
         header[6] = (byte) ((totalFileLen >> 16) & 0xff);
         header[7] = (byte) ((totalFileLen >> 24) & 0xff);
 
-        // WAVE header
         header[8] = 'W'; header[9] = 'A'; header[10] = 'V'; header[11] = 'E';
 
-        // fmt subchunk
         header[12] = 'f'; header[13] = 'm'; header[14] = 't'; header[15] = ' ';
         header[16] = 16; header[17] = 0; header[18] = 0; header[19] = 0;
-        header[20] = 1; header[21] = 0; // AudioFormat (PCM)
+        header[20] = 1; header[21] = 0;
         header[22] = (byte) channels; header[23] = 0;
 
-        // Sample rate
         header[24] = (byte) (sampleRate & 0xff);
         header[25] = (byte) ((sampleRate >> 8) & 0xff);
         header[26] = (byte) ((sampleRate >> 16) & 0xff);
         header[27] = (byte) ((sampleRate >> 24) & 0xff);
 
-        // Byte rate
         header[28] = (byte) (byteRate & 0xff);
         header[29] = (byte) ((byteRate >> 8) & 0xff);
         header[30] = (byte) ((byteRate >> 16) & 0xff);
@@ -248,7 +225,6 @@ public class TranscriptionManager {
         header[32] = (byte) (channels * 2); header[33] = 0;
         header[34] = 16; header[35] = 0;
 
-        // data subchunk
         header[36] = 'd'; header[37] = 'a'; header[38] = 't'; header[39] = 'a';
         header[40] = (byte) (rawAudio.length & 0xff);
         header[41] = (byte) ((rawAudio.length >> 8) & 0xff);
@@ -272,10 +248,7 @@ public class TranscriptionManager {
         }
     }
 
-    // Method expected by RecordingActivity
     public void syncPendingTranscriptions() {
-        // Google Speech API doesn't store pending transcriptions like OpenAI version
-        // This is a no-op for Google Speech implementation
         Log.d(TAG, "Sync pending transcriptions called - not applicable for Google Speech API");
     }
 

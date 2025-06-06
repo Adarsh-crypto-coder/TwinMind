@@ -36,7 +36,6 @@ public class AudioBufferManager {
     public void addAudioData(byte[] data, int length) {
         bufferLock.lock();
         try {
-            // Check if buffer is getting too large
             if (audioBuffer.size() + length > MAX_BUFFER_SIZE) {
                 Log.w(TAG, "Audio buffer reaching max size, saving to temp file");
                 saveBufferToTempFile();

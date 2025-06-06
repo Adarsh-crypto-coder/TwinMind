@@ -57,7 +57,6 @@ public class CalendarEventsAdapter extends RecyclerView.Adapter<CalendarEventsAd
         CalendarEvent event = events.get(position);
         holder.bind(event, dateFormat, timeFormat, dayFormat);
 
-        // Set click listener
         holder.itemView.setOnClickListener(v -> {
             if (eventClickListener != null) {
                 eventClickListener.onEventClick(event);
@@ -90,17 +89,12 @@ public class CalendarEventsAdapter extends RecyclerView.Adapter<CalendarEventsAd
                          SimpleDateFormat timeFormat, SimpleDateFormat dayFormat) {
 
             if (event.startTime != null) {
-                // Format date and day
                 tvDate.setText(formatDateForDisplay(event.startTime, dateFormat));
                 tvDay.setText(dayFormat.format(event.startTime));
-
-                // Format time
                 if (event.isAllDay) {
                     tvTime.setText("All day");
                 } else {
                     String timeText = timeFormat.format(event.startTime);
-
-                    // Add end time if it's the same day and not all day
                     if (event.endTime != null && isSameDay(event.startTime, event.endTime)) {
                         timeText += " - " + timeFormat.format(event.endTime);
                     }
@@ -108,11 +102,8 @@ public class CalendarEventsAdapter extends RecyclerView.Adapter<CalendarEventsAd
                     tvTime.setText(timeText);
                 }
             }
-
-            // Set title
             tvTitle.setText(event.title);
 
-            // Set location (show/hide based on availability)
             if (event.location != null && !event.location.trim().isEmpty()) {
                 tvLocation.setText(event.location);
                 tvLocation.setVisibility(View.VISIBLE);
@@ -125,21 +116,16 @@ public class CalendarEventsAdapter extends RecyclerView.Adapter<CalendarEventsAd
             Calendar cal = Calendar.getInstance();
             Calendar today = Calendar.getInstance();
             cal.setTime(date);
-
-            // Check if it's today
             if (cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
                     cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
                 return "Today";
             }
-
-            // Check if it's tomorrow
             today.add(Calendar.DAY_OF_YEAR, 1);
             if (cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
                     cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
                 return "Tomorrow";
             }
 
-            // Use formatted date
             return dateFormat.format(date);
         }
 

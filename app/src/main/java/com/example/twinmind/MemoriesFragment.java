@@ -50,7 +50,6 @@ public class MemoriesFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Refresh memories when user returns to this fragment
         loadMemories();
     }
 
@@ -89,14 +88,12 @@ public class MemoriesFragment extends Fragment {
     private void onMemoryClick(SessionSummary session) {
         Log.d(TAG, "Memory clicked: " + session.sessionId);
 
-        // Navigate to NotesActivity with the selected session
         if (getActivity() instanceof HomeActivity) {
             HomeActivity homeActivity = (HomeActivity) getActivity();
             homeActivity.showNotesForSession(session.sessionId);
         }
     }
 
-    // Adapter for Memories RecyclerView
     private static class MemoriesAdapter extends RecyclerView.Adapter<MemoriesAdapter.MemoryViewHolder> {
 
         private List<SessionSummary> sessions;
@@ -139,14 +136,12 @@ public class MemoriesFragment extends Fragment {
         static class MemoryViewHolder extends RecyclerView.ViewHolder {
             private TextView tvDate;
             private TextView tvTime;
-//            private TextView tvTitle;
             private TextView tvDuration;
 
             public MemoryViewHolder(@NonNull View itemView) {
                 super(itemView);
                 tvDate = itemView.findViewById(R.id.tv_date);
                 tvTime = itemView.findViewById(R.id.tv_time);
-//                tvTitle = itemView.findViewById(R.id.tv_title);
                 tvDuration = itemView.findViewById(R.id.tv_duration);
             }
 
@@ -154,20 +149,9 @@ public class MemoriesFragment extends Fragment {
                              SimpleDateFormat timeFormat, OnMemoryClickListener clickListener) {
 
                 Date sessionDate = new Date(session.startTime);
-
-                // Set date (group by date)
                 tvDate.setText(formatDateForGrouping(sessionDate, dateFormat));
-
-                // Set time
                 tvTime.setText(timeFormat.format(sessionDate));
-
-                // Set title (generate from first transcription or use default)
-//                tvTitle.setText(generateTitle(session.firstTranscription));
-
-                // Set duration
                 tvDuration.setText(formatDuration(session.duration));
-
-                // Set click listener
                 itemView.setOnClickListener(v -> {
                     if (clickListener != null) {
                         clickListener.onMemoryClick(session);
@@ -179,21 +163,15 @@ public class MemoriesFragment extends Fragment {
                 Calendar cal = Calendar.getInstance();
                 Calendar today = Calendar.getInstance();
                 cal.setTime(date);
-
-                // Check if it's today
                 if (cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
                         cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
                     return "Today";
                 }
-
-                // Check if it's yesterday
                 today.add(Calendar.DAY_OF_YEAR, -1);
                 if (cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
                         cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
                     return "Yesterday";
                 }
-
-                // Use day and month format
                 return dateFormat.format(date);
             }
 
@@ -202,13 +180,11 @@ public class MemoriesFragment extends Fragment {
                     return "TwinMind Session";
                 }
 
-                // Take first meaningful words (up to 50 characters)
                 String title = firstTranscription.trim();
                 if (title.length() > 50) {
                     title = title.substring(0, 47) + "...";
                 }
 
-                // Capitalize first letter
                 if (title.length() > 0) {
                     title = title.substring(0, 1).toUpperCase() + title.substring(1);
                 }

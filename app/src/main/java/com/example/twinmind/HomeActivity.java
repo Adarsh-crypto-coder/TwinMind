@@ -1,20 +1,28 @@
+
 package com.example.twinmind;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.GravityCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
@@ -22,14 +30,17 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     private ViewPager2 viewPager;
     private TextView tabMemories, tabCalendar, tabQuestions;
     private ImageView profileImage;
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
     private int currentTab = 0;
 
     private FirebaseAuth auth;
@@ -42,13 +53,20 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         initViews();
         initFirebase();
         loadUserProfile();
         setupViewPager();
         setupTabClickListeners();
+        setupNavigationDrawer();
     }
 
     private void initViews() {
@@ -58,11 +76,106 @@ public class HomeActivity extends AppCompatActivity {
         tabQuestions = findViewById(R.id.tab_questions);
         profileImage = findViewById(R.id.profile_image);
         btnCapture = findViewById(R.id.btn_capture);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.navigation_view);
     }
 
     private void initFirebase() {
         auth = FirebaseAuth.getInstance();
         currentUser = auth.getCurrentUser();
+    }
+
+    private void setupNavigationDrawer() {
+        navigationView.setNavigationItemSelectedListener(this);
+
+        // Setup profile image click to open drawer
+        profileImage.setOnClickListener(v -> {
+            drawerLayout.openDrawer(GravityCompat.START);
+        });
+
+        // Update navigation header with user info
+        updateNavigationHeader();
+    }
+
+    private void updateNavigationHeader() {
+        View headerView = navigationView.getHeaderView(0);
+        ImageView navProfileImage = headerView.findViewById(R.id.nav_profile_image);
+        TextView navUserName = headerView.findViewById(R.id.nav_user_name);
+        TextView navUserEmail = headerView.findViewById(R.id.nav_user_email);
+
+        if (currentUser != null) {
+            // Set user name
+            String displayName = currentUser.getDisplayName();
+            navUserName.setText(displayName != null ? displayName : "User");
+
+            // Set user email
+            String email = currentUser.getEmail();
+            navUserEmail.setText(email != null ? email : "");
+
+            // Load profile image
+            if (currentUser.getPhotoUrl() != null) {
+                Glide.with(this)
+                        .load(currentUser.getPhotoUrl())
+                        .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.ic_profile)
+                        .error(R.drawable.ic_profile)
+                        .into(navProfileImage);
+            }
+        }
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+          if (id == R.id.nav_sign_out) {
+            // Sign out user
+            signOutUser();
+            return true;
+        }
+
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    private void signOutUser() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Sign Out")
+                .setMessage("Are you sure you want to sign out?")
+                .setPositiveButton("Sign Out", (dialog, which) -> {
+                    performSignOut();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void performSignOut() {
+        try {
+            auth.signOut();
+            clearLocalData();
+
+            // Navigate to login activity
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+
+            Toast.makeText(this, "Signed out successfully", Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            Log.e("HomeActivity", "Error signing out", e);
+            Toast.makeText(this, "Error signing out. Please try again.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void clearLocalData() {
+        // Clear any cached data, preferences, etc.
+        // For example:
+        // SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        // prefs.edit().clear().apply();
+
+        // Clear database if needed (be careful with this)
+        // TranscriptionDatabaseHelper.getInstance(this).clearAllData();
     }
 
     private void loadUserProfile() {
@@ -121,12 +234,6 @@ public class HomeActivity extends AppCompatActivity {
         tabQuestions.setOnClickListener(v -> {
             viewPager.setCurrentItem(2, true);
         });
-
-        // Optional: Add click listener to profile image for profile menu
-        profileImage.setOnClickListener(v -> {
-            // TODO: Show profile menu or navigate to profile screen
-            showProfileMenu();
-        });
     }
 
     private void handleCaptureClick() {
@@ -141,11 +248,6 @@ public class HomeActivity extends AppCompatActivity {
             Log.d("HomeActivity", "Permissions not granted, requesting permissions");
             requestAllPermissions();
         }
-    }
-
-    private void showProfileMenu() {
-        // TODO: Implement profile menu (logout, settings, etc.)
-        // You can show a popup menu or navigate to profile activity
     }
 
     private void updateTabSelection(int position) {
@@ -220,7 +322,7 @@ public class HomeActivity extends AppCompatActivity {
 
         Log.d("HomeActivity", "Microphone permission: " + micPermission);
         Log.d("HomeActivity", "Storage permission: " + storagePermission);
-        Log.d("HomeActivity", "Android version: " + android.os.Build.VERSION.SDK_INT);
+        Log.d("HomeActivity", "Android version: " + android.os.Build.VERSION_CODES.R);
 
         return micPermission && storagePermission;
     }
@@ -303,5 +405,14 @@ public class HomeActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SessionNotesActivity.class);
         intent.putExtra("SESSION_ID", sessionId);
         startActivity(intent);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 }

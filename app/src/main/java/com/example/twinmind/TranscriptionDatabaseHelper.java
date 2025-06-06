@@ -14,13 +14,10 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "TranscriptionDB";
     private static final String DATABASE_NAME = "twinmind_transcriptions.db";
-    private static final int DATABASE_VERSION = 2; // Increment version for schema change
-
-    // Table names
+    private static final int DATABASE_VERSION = 2;
     private static final String TABLE_RECORDING_SESSIONS = "recording_sessions";
     private static final String TABLE_TRANSCRIPTIONS = "transcriptions";
 
-    // Recording Sessions table columns
     private static final String COLUMN_SESSION_ID = "session_id";
     private static final String COLUMN_TITLE = "title";
     private static final String COLUMN_START_TIME = "start_time";
@@ -28,7 +25,6 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_DURATION = "duration";
     private static final String COLUMN_LOCATION = "location";
 
-    // Transcriptions table columns
     private static final String COLUMN_TRANSCRIPTION_TEXT = "transcription_text";
     private static final String COLUMN_TIMESTAMP = "timestamp";
     private static final String COLUMN_CHUNK_INDEX = "chunk_index";
@@ -54,8 +50,6 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.d(TAG, "Upgrading database from version " + oldVersion + " to " + newVersion);
-
-        // Drop old tables if they exist
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TRANSCRIPTIONS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_RECORDING_SESSIONS);
 
@@ -64,7 +58,6 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void createTables(SQLiteDatabase db) {
-        // Create recording sessions table
         String createSessionsTable = "CREATE TABLE " + TABLE_RECORDING_SESSIONS + " (" +
                 COLUMN_SESSION_ID + " TEXT PRIMARY KEY, " +
                 COLUMN_TITLE + " TEXT, " +
@@ -91,7 +84,6 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
         Log.d(TAG, "Tables created successfully");
     }
 
-    // Recording Session methods
     public void createRecordingSession(String sessionId, String title, long startTime, String location) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -150,7 +142,6 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
         return session;
     }
 
-    // Transcription methods using TranscriptionEntry
     public void insertTranscription(String sessionId, String transcriptionText, long timestamp, int chunkIndex) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -221,11 +212,8 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
 
     public void deleteRecordingSession(String sessionId) {
         SQLiteDatabase db = this.getWritableDatabase();
-
-        // Delete transcriptions first (due to foreign key)
         db.delete(TABLE_TRANSCRIPTIONS, COLUMN_SESSION_ID + " = ?", new String[]{sessionId});
 
-        // Delete recording session
         int rowsAffected = db.delete(TABLE_RECORDING_SESSIONS, COLUMN_SESSION_ID + " = ?", new String[]{sessionId});
 
         if (rowsAffected > 0) {
@@ -265,7 +253,6 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
                 int transcriptionCount = cursor.getInt(cursor.getColumnIndexOrThrow("transcription_count"));
                 String allText = cursor.getString(cursor.getColumnIndexOrThrow("all_text"));
 
-                // Get first meaningful transcription
                 String firstTranscription = getFirstMeaningfulTranscription(allText);
 
                 SessionSummary session = new SessionSummary(
@@ -292,7 +279,6 @@ public class TranscriptionDatabaseHelper extends SQLiteOpenHelper {
             return "Recording session";
         }
 
-        // Split by spaces and take first meaningful words
         String[] words = allText.trim().split("\\s+");
         StringBuilder firstTranscription = new StringBuilder();
 

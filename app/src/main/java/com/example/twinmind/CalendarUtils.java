@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 public class CalendarUtils {
 
-    // Date formatters
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("h:mm a", Locale.getDefault());
     private static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("EEEE", Locale.getDefault());
@@ -23,31 +22,22 @@ public class CalendarUtils {
         Calendar cal = Calendar.getInstance();
         Calendar today = Calendar.getInstance();
         cal.setTime(date);
-
-        // Check if it's today
         if (isSameDay(cal, today)) {
             return "Today";
         }
-
-        // Check if it's tomorrow
         today.add(Calendar.DAY_OF_YEAR, 1);
         if (isSameDay(cal, today)) {
             return "Tomorrow";
         }
-
-        // Check if it's yesterday
         today.add(Calendar.DAY_OF_YEAR, -2);
         if (isSameDay(cal, today)) {
             return "Yesterday";
         }
-
-        // Check if it's this week
-        today = Calendar.getInstance(); // Reset to today
+        today = Calendar.getInstance();
         if (isThisWeek(cal, today)) {
             return DAY_FORMAT.format(date);
         }
 
-        // Use date format
         return DATE_FORMAT.format(date);
     }
 
@@ -62,8 +52,6 @@ public class CalendarUtils {
         }
 
         String timeText = TIME_FORMAT.format(startTime);
-
-        // Add end time if it's the same day
         if (endTime != null && isSameDay(startTime, endTime)) {
             timeText += " - " + TIME_FORMAT.format(endTime);
         }
@@ -82,15 +70,12 @@ public class CalendarUtils {
         }
 
         String result = FULL_FORMAT.format(startTime);
-
-        // Add end time if different day or significant time difference
         if (endTime != null) {
             if (!isSameDay(startTime, endTime)) {
                 result += " - " + FULL_FORMAT.format(endTime);
             } else {
-                // Same day, just add end time
                 long diffMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-                if (diffMinutes > 30) { // Show end time for events longer than 30 minutes
+                if (diffMinutes > 30) {
                     result += " - " + TIME_FORMAT.format(endTime);
                 }
             }
@@ -162,7 +147,6 @@ public class CalendarUtils {
             long endMs = endTime.getTime();
             return now >= startMs && now <= endMs;
         } else {
-            // Assume 1 hour duration if no end time
             return now >= startMs && now <= (startMs + 60 * 60 * 1000);
         }
     }
@@ -222,7 +206,6 @@ public class CalendarUtils {
      * Check if date is within this week
      */
     private static boolean isThisWeek(Calendar eventCal, Calendar today) {
-        // Get start of this week (Sunday)
         Calendar startOfWeek = (Calendar) today.clone();
         startOfWeek.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
         startOfWeek.set(Calendar.HOUR_OF_DAY, 0);
@@ -230,7 +213,6 @@ public class CalendarUtils {
         startOfWeek.set(Calendar.SECOND, 0);
         startOfWeek.set(Calendar.MILLISECOND, 0);
 
-        // Get end of this week (Saturday)
         Calendar endOfWeek = (Calendar) startOfWeek.clone();
         endOfWeek.add(Calendar.DAY_OF_WEEK, 6);
         endOfWeek.set(Calendar.HOUR_OF_DAY, 23);
@@ -277,7 +259,6 @@ public class CalendarUtils {
     public static TimeRange getTimeRangeForThisWeek() {
         Calendar now = Calendar.getInstance();
 
-        // Start of week (Sunday)
         Calendar startOfWeek = (Calendar) now.clone();
         startOfWeek.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
         startOfWeek.set(Calendar.HOUR_OF_DAY, 0);
@@ -285,7 +266,6 @@ public class CalendarUtils {
         startOfWeek.set(Calendar.SECOND, 0);
         startOfWeek.set(Calendar.MILLISECOND, 0);
 
-        // End of week (Saturday)
         Calendar endOfWeek = (Calendar) startOfWeek.clone();
         endOfWeek.add(Calendar.DAY_OF_WEEK, 6);
         endOfWeek.set(Calendar.HOUR_OF_DAY, 23);
@@ -311,7 +291,6 @@ public class CalendarUtils {
         long start2 = event2.startTime.getTime();
         long end2 = event2.endTime != null ? event2.endTime.getTime() : start2 + (60 * 60 * 1000); // Default 1 hour
 
-        // Check for overlap
         return start1 < end2 && start2 < end1;
     }
 }

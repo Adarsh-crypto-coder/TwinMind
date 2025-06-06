@@ -1,6 +1,5 @@
 package com.example.twinmind;
 
-// RecordingSession.java
 public class RecordingSession {
     public String sessionId;
     public String title;

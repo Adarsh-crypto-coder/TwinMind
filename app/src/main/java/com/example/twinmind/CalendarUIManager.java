@@ -12,7 +12,6 @@ import java.util.List;
 
 public class CalendarUIManager {
 
-    // UI Components
     private RecyclerView recyclerView;
     private LinearLayout noEventsLayout;
     private LinearLayout noPermissionLayout;
@@ -20,7 +19,6 @@ public class CalendarUIManager {
     private TextView tvStatus;
     private TextView tvPermissionMessage;
 
-    // Adapter
     private CalendarEventsAdapter adapter;
 
     public CalendarUIManager(View rootView, CalendarEventsAdapter adapter) {
@@ -78,13 +76,9 @@ public class CalendarUIManager {
 
     public void showError(String errorMessage) {
         hideAllViews();
-
-        // Show error as toast and fallback to no events view
         if (recyclerView.getContext() != null) {
             Toast.makeText(recyclerView.getContext(), errorMessage, Toast.LENGTH_LONG).show();
         }
-
-        // Show no events layout with error context
         showNoEvents();
     }
 
@@ -99,8 +93,6 @@ public class CalendarUIManager {
     public void setEventClickListener(CalendarEventsAdapter.OnEventClickListener listener) {
         adapter.setOnEventClickListener(listener);
     }
-
-    // Helper methods for state checks
     public boolean isShowingEvents() {
         return recyclerView.getVisibility() == View.VISIBLE;
     }
